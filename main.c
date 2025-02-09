@@ -1,14 +1,15 @@
 #include <SDL2/SDL.h>
+#include <stdbool.h>
 #define CHIP8_WIDTH 64
 #define CHIP8_HEIGHT 32
-#define SCALE_FACTOR 10 // Integer scaling
+#define SCALE_FACTOR 32 // Integer scaling
 #define FONTSET_SIZE 80
 #define FONT_START_ADDRESS 0x80
 #define START_ADDRESS 0x200
 
 typedef struct Chip8_t {
 //registers
-	uint32_t display[CHIP8_WIDTH-1][CHIP8_HEIGHT-1];
+	uint32_t display[CHIP8_HEIGHT][CHIP8_WIDTH];
 	uint8_t ram[4095];
 	uint16_t stack[15];
 	uint8_t registers[15];
@@ -40,7 +41,7 @@ int main (int argc, char* argv[]) {
 	
 	//***get file size***
 	fseek(file, 0, SEEK_END);
-	long file_size = ftell(file);
+	size_t file_size = ftell(file);
 	fseek(file,0,SEEK_SET);
 	if (file_size == -1) {
 		fprintf(stderr, "Could not get file size\n");
@@ -49,7 +50,7 @@ int main (int argc, char* argv[]) {
 	}
 	
 	//***Read file into a buffer***
-	char* buffer = malloc(sizeof(file_size));
+	char* buffer = malloc(file_size);
 	if (!buffer) {
 		fprintf(stderr,"Could not allocate memory\n");
 		fclose(file);
@@ -67,8 +68,6 @@ int main (int argc, char* argv[]) {
 		fclose(file);
 		return 1;
 	}
-	//we don't need the file anymore
-	fclose(file);
 	
 	//stack allocation for chip8
 	chip8 chip;
@@ -91,7 +90,7 @@ int main (int argc, char* argv[]) {
 	0xF0, 0x80, 0x80, 0x80, 0xF0, // C
 	0xE0, 0x90, 0x90, 0x90, 0xE0, // D
 	0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-	0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+	0xF0, 0x80, 0xF0, 0x80, 0x80	// F
 	};
 	for (uint i = 0; i < FONTSET_SIZE; ++i) {
 		chip.ram[FONT_START_ADDRESS + i] = fontset[i];
@@ -100,9 +99,9 @@ int main (int argc, char* argv[]) {
 	for (ulong i = 0; i <file_size; ++i) {
 		chip.ram[START_ADDRESS + i] = buffer[i];
 	}
-	//we don't need this one anymore either
+	//we don't need this anymore 
+	fclose(file);
 	free(buffer);
-
 
 
 	//heap allocation for chip8
@@ -125,7 +124,7 @@ int main (int argc, char* argv[]) {
 		CHIP8_WIDTH * SCALE_FACTOR,
 		CHIP8_HEIGHT * SCALE_FACTOR,
 		SDL_WINDOW_SHOWN
-	 );
+	);
 
 	if (!window) {
 		fprintf(stderr, "Window creation failed: %s\n", SDL_GetError());
@@ -140,5 +139,64 @@ int main (int argc, char* argv[]) {
 		SDL_Quit();
 		return 1;
 	}
-	//END SDL init
+	//create the texture that we will render to
+	SDL_Texture* texture = SDL_CreateTexture(
+		renderer,
+		SDL_PIXELFORMAT_ARGB8888,
+		SDL_TEXTUREACCESS_STREAMING,
+		CHIP8_WIDTH,
+		CHIP8_HEIGHT
+	);
+
+	//error handling
+	if (!texture) {
+		fprintf(stderr, "Texture creation failed: %s\n", SDL_GetError());
+		SDL_DestroyRenderer(renderer);
+		SDL_DestroyWindow(window);
+		SDL_Quit();
+		return 1;
+	}
+	//Checkerboard to test display
+	for (uint y = 0; y < CHIP8_HEIGHT; ++y) {
+		for (uint x = 0; x < CHIP8_WIDTH; ++x) {
+			if ((x + y) % 2 == 0)
+				chip.display[y][x] = 0xFFFFFFFF;  // White
+			else
+				chip.display[y][x] = 0x00000000;  // Black
+		}
+	}
+	
+	//***Main Event Loop***
+	SDL_Event event;
+	bool quit = false;
+
+	while (!quit) {
+		while (SDL_PollEvent(&event) !=0) {
+			if (event.type == SDL_QUIT) {
+				quit = true;
+			}
+		}
+		//put display into texture
+		SDL_UpdateTexture(texture,NULL, chip.display, CHIP8_WIDTH * sizeof(uint32_t));
+		//clear the renderer
+		SDL_SetRenderDrawColor(renderer, 0,0,0,255);
+		SDL_RenderClear(renderer);
+
+		//Render the texture to the window (scaled)
+		SDL_Rect destRect = {0,0, CHIP8_WIDTH * SCALE_FACTOR, CHIP8_HEIGHT * SCALE_FACTOR};
+		SDL_RenderCopy(renderer, texture, NULL, &destRect);
+
+		//Update the screen
+		SDL_RenderPresent(renderer);
+		SDL_Delay(16);
+	}
+
+	//Clean up and quit
+	SDL_DestroyTexture(texture);
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
+	SDL_Quit();
+
+	return 0;
+
 }
