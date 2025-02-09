@@ -1,4 +1,6 @@
 #include <SDL2/SDL.h>
+#include <stdlib.h>
+#include <time.h>
 #include <stdbool.h>
 #define CHIP8_WIDTH 64
 #define CHIP8_HEIGHT 32
@@ -8,11 +10,10 @@
 #define START_ADDRESS 0x200
 
 typedef struct Chip8_t {
-//registers
 	uint32_t display[CHIP8_HEIGHT][CHIP8_WIDTH];
-	uint8_t ram[4095];
-	uint16_t stack[15];
-	uint8_t registers[15];
+	uint8_t ram[4096];
+	uint16_t stack[16];
+	uint8_t registers[16];
 	uint16_t idx_reg;
 	uint16_t pc;
 	uint16_t opcode;
@@ -157,8 +158,8 @@ int main (int argc, char* argv[]) {
 		return 1;
 	}
 	//Checkerboard to test display
-	for (uint y = 0; y < CHIP8_HEIGHT; ++y) {
-		for (uint x = 0; x < CHIP8_WIDTH; ++x) {
+	for (uint y = 0; y < CHIP8_HEIGHT; y++) {
+		for (uint x = 0; x < CHIP8_WIDTH; x++) {
 			if ((x + y) % 2 == 0)
 				chip.display[y][x] = 0xFFFFFFFF;  // White
 			else
@@ -176,6 +177,72 @@ int main (int argc, char* argv[]) {
 				quit = true;
 			}
 		}
+		//Load opcode and increment PC to next instruction
+		//since PC points to a single byte of ram, we bitshift to the left by 8 bits and OR it with the next 8 bits to get the full 12bit opcode
+		chip.opcode = (chip.ram[chip.pc] << 8u) | chip.ram[chip.pc+1];
+		chip.pc += 2;
+		// we will also need a random number every cycle
+		srand(time(NULL));
+		uint8_t random = rand();
+		//*** Emulate each opcode ***
+		switch (chip.opcode & 0xF0000u) {
+			case 0x1000u: 
+				//this is the JUMP instruction. Jump to the address in the last 3 digits in HEX
+				chip.pc = chip.opcode & 0x0FFFu;
+				break;
+			case 0x2000u:
+				//This is the CALL instruction. Jump to the address indicated and also add a stack frame with a pointer to the previous instruction
+				chip.pc = chip.opcode & 0x0FFFu;
+				chip.stack[chip.idx_stack] = chip.pc;
+				chip.idx_stack++;
+				chip.pc = chip.opcode & 0x0FFFu;
+				break;
+			case 0x3000u:
+				//this is the SE Vx, byte instruction. It skips the next instruction if the value in the register specified by the second 4bits is equal to the value in the last 8 bits
+				if (chip.registers[(chip.opcode & 0x0F00u) >> 8u] == (chip.opcode & 0x00FFu))
+					chip.pc += 2;
+				break;
+			case 0x4000u:
+				//this does the opposite of above. It skips if they DO NOT equal
+				if (chip.registers[(chip.opcode & 0x0F00u) >> 8u] != (chip.opcode & 0x00FFu))
+					chip.pc +=2;
+				break;
+			case 0x5000u:
+				//skip if value at register indicated by second 4 bits is equal to value at register indicated by third 4 bits
+				if (chip.registers[chip.opcode & 0x0F00u >> 8u] == chip.registers[chip.opcode & 0x00F0u])
+					chip.pc += 2;
+				break;
+			case 0x6000u:
+				//put the value in the last two bytes into the register indicated by the second 4 bits
+				chip.registers[chip.opcode & 0x0F00u] = (chip.opcode & 0x00FFu);
+				break;
+			case 0x7000u:
+				//add the value in the last two bytes to the value in the register indicated by the second 4 bits and store the sum in that register
+				chip.registers[chip.opcode & 0x0F00u] += (chip.opcode & 0x00FFu);
+				break;
+			case 0x9000u:
+				//skip next instruction if register in second 4 bits does not equal register in third 4 bits
+				if (chip.registers[chip.opcode & 0x0F00u] != chip.registers[chip.opcode & 0x00F0U])
+					chip.pc += 2;
+				break;
+			case 0xA000u:
+				//set the index register to the value in the last 12bits
+				chip.idx_reg = chip.opcode & 0x0FFFu;
+				break;
+			case 0xB000u:
+				//jump to the address indicated by the last 12 bits + the value in register 0
+				chip.pc = chip.registers[0] + chip.opcode & 0x00FFFu;
+				break;
+			case 0xC000u:
+				//generate a random number in the range of 0-255 and then AND that with the last byte of the opcode, then store that number in the register indicated by the second 4 bits
+				chip.registers[chip.opcode & 0x0F00u >> 8u] = (random & (chip.opcode & 0x000Fu));
+				break;
+			case 0xD000u:
+				//TODO Dxyn
+				//Draw sprite with length n-bytes starting at location determined by registers xy
+
+
+
 		//put display into texture
 		SDL_UpdateTexture(texture,NULL, chip.display, CHIP8_WIDTH * sizeof(uint32_t));
 		//clear the renderer
