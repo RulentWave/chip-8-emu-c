@@ -1,3 +1,7 @@
+/*
+Copyright (C) 2025 Eric Hernandez
+See end of file for extended copyright information */
+
 #include <raylib.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -77,8 +81,8 @@ int main (int argc, char* argv[]) {
 	struct arguments arguments;
 	arguments.scale_factor = SCALE_FACTOR;
 	arguments.filename = NULL;
-	//argp_parse(&argp, argc, argv, 0, 0, &arguments);
-	arguments.filename = "INVADERS";
+	argp_parse(&argp, argc, argv, 0, 0, &arguments);
+	//arguments.filename = "INVADERS";
 
 	//***open file***
 	FILE* file = fopen(arguments.filename, "rb");
@@ -199,7 +203,7 @@ int main (int argc, char* argv[]) {
 			chip.timer_delay--;
 		}
 		chip.opcode = (chip.ram[chip.pc] << 8u) | chip.ram[chip.pc+1];
-		printf("chip opcode is %X\n", chip.opcode);
+		//printf("chip opcode is %X\n", chip.opcode);
 		chip.pc += 2;
 		// we will also need a random number every cycle
 		uint8_t random = GetRandomValue(0, 255);
@@ -210,7 +214,7 @@ int main (int argc, char* argv[]) {
 					case 0x00E0u:
 					//clear the display
 						memset(chip.display, 0, sizeof(chip.display));
-						wait = 0.000164;
+						wait = 0.000109;
 						break;
 					case 0x00EEu:
 					// return from subroutine
@@ -532,3 +536,24 @@ If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and
 	CloseWindow();
 	return 0;
 	}
+/*MIT License
+Copyright (c) 2025 Eric Hernandez
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
