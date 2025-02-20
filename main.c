@@ -190,6 +190,7 @@ int main (int argc, char* argv[]) {
 
 
 	struct timespec last_time;
+	clock_gettime(CLOCK_MONOTONIC_RAW, &last_time);
 	while (!WindowShouldClose()) {
 		//Load opcode and increment PC to next instruction
 		//since PC points to a single byte of ram, we bitshift to the left by 8 bits and OR it with the next 8 bits to get the full 12bit opcode
@@ -447,7 +448,6 @@ If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and
 						{
 							uint8_t Vx = (chip.opcode & 0x0F00u) >> 8u;
 							bool keyFound = false;
-							uint_fast8_t keyflag = 0;
 							for (uint_fast8_t i = 0; i < 16; i++) {
 								if (IsKeyDown(keypad[i])) {
 									chip.registers[Vx] = i;
