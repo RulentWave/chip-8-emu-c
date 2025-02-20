@@ -1,4 +1,4 @@
-```markdown
+
 # chip-8-emu
 
 A Chip-8 emulator written in C using Raylib.
@@ -42,4 +42,3 @@ chip-8-emu -s 16 -f 120 pong.ch8
 ## License
 
 This project is licensed under the MIT License - see the `LICENSE` file for details.
-```
