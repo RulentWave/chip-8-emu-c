@@ -35,10 +35,12 @@ typedef struct Chip8_t {
 struct arguments {
 	char* filename;
 	long scale_factor;
+	float fps;
 };
 
 static struct argp_option options[] = {
 	{"scalefactor", 's', "NUMBER", 0, "Scaling factor. Defaults to 32", 0},
+	{"fps", 'f', "NUMBER", 0, "FPS limit. Defaults to 60", 0},
 	{0}
 };
 
@@ -51,6 +53,9 @@ static error_t parse_opt (int key, char* arg, struct argp_state* state) {
 	switch (key) {
 		case 's':
 			arguments->scale_factor = atoi(arg);
+			break;
+		case 'f':
+			arguments->fps = atoi(arg);
 			break;
 		case ARGP_KEY_ARG:
 			if (state->arg_num >= 1)
@@ -81,6 +86,7 @@ int main (int argc, char* argv[]) {
 	struct arguments arguments;
 	arguments.scale_factor = SCALE_FACTOR;
 	arguments.filename = NULL;
+	arguments.fps = 60.0;
 	argp_parse(&argp, argc, argv, 0, 0, &arguments);
 	//arguments.filename = "INVADERS";
 
@@ -191,13 +197,14 @@ int main (int argc, char* argv[]) {
 
 	struct timespec last_time;
 	clock_gettime(CLOCK_MONOTONIC_RAW, &last_time);
+	struct timespec gfx_clock = last_time;
+	struct timespec cycle_start;
+	struct timespec cycle_end;
 	while (!WindowShouldClose()) {
 		//Load opcode and increment PC to next instruction
 		//since PC points to a single byte of ram, we bitshift to the left by 8 bits and OR it with the next 8 bits to get the full 12bit opcode
-		double wait = 0;
-		struct timespec cycle_start;
-		struct timespec cycle_end;
 		clock_gettime(CLOCK_MONOTONIC_RAW, &cycle_start);
+		double wait = 0;
 		double elapsed = (cycle_start.tv_sec - last_time.tv_sec) + (cycle_start.tv_nsec - last_time.tv_nsec) / 1e9;
 		if (elapsed >= (1.0 /60.0) && chip.timer_delay > 0) {
 			last_time = cycle_start;
@@ -409,8 +416,7 @@ If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and
 						}
 					}
 				}
-				//wait = 0.022734; --This is the average op time for this operation but i think it feels too slow so i reduced it
-				wait = 0.012734;
+				wait = 0.002734;
 				break;
 			case 0xE000u:
 				switch (chip.opcode & 0xFF) {
@@ -513,6 +519,13 @@ If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and
 				}
 		}
 
+		struct timespec now;
+		clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+
+		double ft = (now.tv_sec - gfx_clock.tv_sec) + (now.tv_nsec - gfx_clock.tv_nsec) / 1e9;
+		if (ft >= (1.0/arguments.fps)) {
+		gfx_clock = now;
+		printf ("%lf\n", ft);
 		UpdateTexture(screen_texture, &chip.display[0][0]);
 		BeginDrawing();
 		ClearBackground(BLACK);
@@ -526,9 +539,12 @@ If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and
 			target.texture, (Rectangle){0,0, target.texture.width, -target.texture.height}, (Rectangle){0,0,windowWidth,windowHeight},
 			(Vector2){0,0}, 0.0f, WHITE);
 		EndDrawing();
+		}
 
 		clock_gettime(CLOCK_MONOTONIC_RAW, &cycle_end);
+//		wait = (1.0 / 500.0);
 		WaitTime(wait - ((cycle_end.tv_sec - cycle_start.tv_sec) + (cycle_end.tv_nsec - cycle_start.tv_nsec) / 1000000000.0));
+//		WaitTime(wait);
 		}
 	//De-init
 	UnloadRenderTexture(target);
