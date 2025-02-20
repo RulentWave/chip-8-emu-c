@@ -1,7 +1,13 @@
 
 # chip-8-emu
 
-A Chip-8 emulator written in C using Raylib.
+A Chip-8 emulator written in C using Raylib. You will need to install the Raylib-dev files to build.
+```
+sudo apt install raylib-dev
+```
+```
+sudo dnf install raylib-devel
+```
 
 ## Building
 
