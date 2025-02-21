@@ -525,7 +525,6 @@ If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and
 		double ft = (now.tv_sec - gfx_clock.tv_sec) + (now.tv_nsec - gfx_clock.tv_nsec) / 1e9;
 		if (ft >= (1.0/arguments.fps)) {
 		gfx_clock = now;
-		printf ("%lf\n", ft);
 		UpdateTexture(screen_texture, &chip.display[0][0]);
 		BeginDrawing();
 		ClearBackground(BLACK);
