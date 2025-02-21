@@ -525,28 +525,29 @@ If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and
 				}
 		}
 
+
+		UpdateTexture(screen_texture, &chip.display[0][0]);
+
 		struct timespec now;
 		clock_gettime(CLOCK_MONOTONIC_RAW, &now);
-
 		double ft = (now.tv_sec - gfx_clock.tv_sec) + (now.tv_nsec - gfx_clock.tv_nsec) / 1e9;
 		if (ft >= (1.0/arguments.fps)) {
-		gfx_clock = now;
-		UpdateTexture(screen_texture, &chip.display[0][0]);
-		BeginDrawing();
+			gfx_clock = now;
 
-		BeginTextureMode(target);
-		DrawTexture(screen_texture, 0, 0, WHITE);
-		EndTextureMode();
+			BeginDrawing();
+			BeginTextureMode(target);
+			DrawTexture(screen_texture, 0, 0, WHITE);
+			EndTextureMode();
 
-		DrawTexturePro(
-			target.texture, (Rectangle){0,0, target.texture.width, -target.texture.height}, (Rectangle){0,0,windowWidth,windowHeight},
-			(Vector2){0,0}, 0.0f, WHITE);
-		EndDrawing();
+			DrawTexturePro(
+				target.texture, (Rectangle){0,0, target.texture.width, -target.texture.height}, (Rectangle){0,0,windowWidth,windowHeight},
+				(Vector2){0,0}, 0.0f, WHITE);
+			EndDrawing();
 		}
 
 		clock_gettime(CLOCK_MONOTONIC_RAW, &cycle_end);
 		if (arguments.hz)
-			wait = (1.0/arguments.hz);
+			wait = (1.0/arguments.hz) - (cycle_end.tv_sec - cycle_start.tv_sec) + (cycle_end.tv_nsec - cycle_start.tv_nsec) / 1e9;
 		WaitTime(wait - ((cycle_end.tv_sec - cycle_start.tv_sec) + (cycle_end.tv_nsec - cycle_start.tv_nsec) / 1e9));
 //		WaitTime(wait);
 		}
