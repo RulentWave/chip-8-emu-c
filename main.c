@@ -527,10 +527,8 @@ If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and
 		gfx_clock = now;
 		UpdateTexture(screen_texture, &chip.display[0][0]);
 		BeginDrawing();
-		ClearBackground(BLACK);
 
 		BeginTextureMode(target);
-		ClearBackground(BLANK);
 		DrawTexture(screen_texture, 0, 0, WHITE);
 		EndTextureMode();
 
@@ -542,7 +540,7 @@ If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and
 
 		clock_gettime(CLOCK_MONOTONIC_RAW, &cycle_end);
 //		wait = (1.0 / 500.0);
-		WaitTime(wait - ((cycle_end.tv_sec - cycle_start.tv_sec) + (cycle_end.tv_nsec - cycle_start.tv_nsec) / 1000000000.0));
+		WaitTime(wait - ((cycle_end.tv_sec - cycle_start.tv_sec) + (cycle_end.tv_nsec - cycle_start.tv_nsec) / 1e9));
 //		WaitTime(wait);
 		}
 	//De-init
