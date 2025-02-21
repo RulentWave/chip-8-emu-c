@@ -1,7 +1,9 @@
 
 # chip-8-emu
 
-A Chip-8 emulator written in C using Raylib. You will need to install the Raylib-dev files to build.
+A Chip-8 emulator written in C using Raylib.
+![Space Invaders](screenshots/Screenshot_20250219_230909-1.avif)
+You will need to install the Raylib-dev files to build.
 ```
 sudo apt install raylib-dev
 ```
