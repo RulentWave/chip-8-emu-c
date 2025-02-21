@@ -36,11 +36,13 @@ struct arguments {
 	char* filename;
 	long scale_factor;
 	float fps;
+	float hz;
 };
 
 static struct argp_option options[] = {
 	{"scalefactor", 's', "NUMBER", 0, "Scaling factor. Defaults to 32", 0},
 	{"fps", 'f', "NUMBER", 0, "FPS limit. Defaults to 60", 0},
+	{"cpuherz", 'h', "NUMBER", 0, "Set clock speed in hz. By default, uses per instruction cycle speed that aproximates the original COSMIC VIP CHIP-8 timings", 0},
 	{0}
 };
 
@@ -56,6 +58,9 @@ static error_t parse_opt (int key, char* arg, struct argp_state* state) {
 			break;
 		case 'f':
 			arguments->fps = atoi(arg);
+			break;
+		case 'h':
+			arguments->hz = atoi(arg);
 			break;
 		case ARGP_KEY_ARG:
 			if (state->arg_num >= 1)
@@ -87,6 +92,7 @@ int main (int argc, char* argv[]) {
 	arguments.scale_factor = SCALE_FACTOR;
 	arguments.filename = NULL;
 	arguments.fps = 60.0;
+	arguments.hz = 0.0;
 	argp_parse(&argp, argc, argv, 0, 0, &arguments);
 	//arguments.filename = "INVADERS";
 
@@ -204,7 +210,7 @@ int main (int argc, char* argv[]) {
 		//Load opcode and increment PC to next instruction
 		//since PC points to a single byte of ram, we bitshift to the left by 8 bits and OR it with the next 8 bits to get the full 12bit opcode
 		clock_gettime(CLOCK_MONOTONIC_RAW, &cycle_start);
-		double wait = 0;
+		double wait = 0.002;
 		double elapsed = (cycle_start.tv_sec - last_time.tv_sec) + (cycle_start.tv_nsec - last_time.tv_nsec) / 1e9;
 		if (elapsed >= (1.0 /60.0) && chip.timer_delay > 0) {
 			last_time = cycle_start;
@@ -416,7 +422,7 @@ If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and
 						}
 					}
 				}
-				wait = 0.002734;
+				wait = 0.001734;
 				break;
 			case 0xE000u:
 				switch (chip.opcode & 0xFF) {
@@ -539,7 +545,8 @@ If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and
 		}
 
 		clock_gettime(CLOCK_MONOTONIC_RAW, &cycle_end);
-//		wait = (1.0 / 500.0);
+		if (arguments.hz)
+			wait = (1.0/arguments.hz);
 		WaitTime(wait - ((cycle_end.tv_sec - cycle_start.tv_sec) + (cycle_end.tv_nsec - cycle_start.tv_nsec) / 1e9));
 //		WaitTime(wait);
 		}

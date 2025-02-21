@@ -29,6 +29,7 @@ chip-8-emu [OPTION...] FILEPATH
 ### Options
 
 *   `-f, --fps=NUMBER`: FPS limit. Defaults to 60.
+*   `-h, --cpuherz=NUMBER`: Set clock speed in hz. By default, uses per instruction cycle speed that aproximates the original COSMIC VIP CHIP-8 timings
 *   `-s, --scalefactor=NUMBER`: Scaling factor. Defaults to 32.
 *   `-?, --help`: Give this help list.
 *   `--usage`: Give a short usage message.
