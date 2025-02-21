@@ -547,7 +547,7 @@ If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy, and
 
 		clock_gettime(CLOCK_MONOTONIC_RAW, &cycle_end);
 		if (arguments.hz)
-			wait = (1.0/arguments.hz) - (cycle_end.tv_sec - cycle_start.tv_sec) + (cycle_end.tv_nsec - cycle_start.tv_nsec) / 1e9;
+			wait = (1.0/arguments.hz);
 		WaitTime(wait - ((cycle_end.tv_sec - cycle_start.tv_sec) + (cycle_end.tv_nsec - cycle_start.tv_nsec) / 1e9));
 //		WaitTime(wait);
 		}
